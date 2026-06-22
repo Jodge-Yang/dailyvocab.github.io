@@ -1,45 +1,123 @@
-// app.js - 主应用逻辑（SPA路由 + 页面渲染）
-
+// app.js - 主应用逻辑（包含登录页）
 const App = {
   currentRoute: '',
   quizState: null,
 
-  init() {
-    window.addEventListener('hashchange', () => this.route())
-    this.route()
+  // ===== 登录页 =====
+  showLogin() {
+    document.getElementById('app').innerHTML = `
+      <div class="login-container">
+        <div class="login-header">
+          <h1>FTTH工程英语</h1>
+          <p>答题系统</p>
+        </div>
+        <div class="login-box">
+          <div class="login-tabs">
+            <button class="tab-btn active" onclick="App.switchLoginTab('employee')">员工登录</button>
+            <button class="tab-btn" onclick="App.switchLoginTab('external')">邀请码登录</button>
+          </div>
+          <div id="loginEmployee" class="login-form">
+            <div class="form-group">
+              <label>用户名</label>
+              <input type="text" id="empUser" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+              <label>密码</label>
+              <input type="password" id="empPass" placeholder="请输入密码">
+            </div>
+            <button class="btn-primary" onclick="App.doLoginEmployee()">登录</button>
+            <p id="empMsg" class="msg"></p>
+          </div>
+          <div id="loginExternal" class="login-form" style="display:none;">
+            <div class="form-group">
+              <label>邀请码</label>
+              <input type="text" id="inviteCode" placeholder="请输入邀请码">
+            </div>
+            <div class="form-group">
+              <label>姓名</label>
+              <input type="text" id="externalName" placeholder="请输入您的姓名">
+            </div>
+            <button class="btn-primary" onclick="App.doLoginExternal()">开始答题</button>
+            <p id="extMsg" class="msg"></p>
+          </div>
+        </div>
+      </div>
+    `;
   },
 
-  route() {
-    const hash = window.location.hash.slice(1) || 'home'
-    this.currentRoute = hash
+  switchLoginTab(tab) {
+    const btns = document.querySelectorAll('.tab-btn');
+    btns[0].classList.toggle('active', tab === 'employee');
+    btns[1].classList.toggle('active', tab === 'external');
+    document.getElementById('loginEmployee').style.display = tab === 'employee' ? 'block' : 'none';
+    document.getElementById('loginExternal').style.display = tab === 'external' ? 'block' : 'none';
+  },
 
-    switch (hash) {
-      case 'home':
-        this.renderHome()
-        break
-      case 'wrong':
-        this.renderWrong()
-        break
-      case 'quiz':
-        this.renderQuiz()
-        break
-      case 'result':
-        this.renderResult()
-        break
-      default:
-        this.renderHome()
+  async doLoginEmployee() {
+    const username = document.getElementById('empUser').value.trim();
+    const password = document.getElementById('empPass').value.trim();
+    const msg = document.getElementById('empMsg');
+    if (!username || !password) {
+      msg.textContent = '请输入用户名和密码';
+      msg.className = 'msg error';
+      return;
+    }
+    msg.textContent = '登录中...';
+    msg.className = 'msg info';
+    const result = await Auth.loginEmployee(username, password);
+    if (result.success) {
+      msg.textContent = '登录成功！';
+      msg.className = 'msg success';
+      setTimeout(() => this.renderHome(), 500);
+    } else {
+      msg.textContent = result.message;
+      msg.className = 'msg error';
     }
   },
 
-  navigate(route) {
-    window.location.hash = route
+  async doLoginExternal() {
+    const code = document.getElementById('inviteCode').value.trim();
+    const name = document.getElementById('externalName').value.trim();
+    const msg = document.getElementById('extMsg');
+    if (!code || !name) {
+      msg.textContent = '请输入邀请码和姓名';
+      msg.className = 'msg error';
+      return;
+    }
+    msg.textContent = '验证中...';
+    msg.className = 'msg info';
+    const result = await Auth.loginExternal(code, name);
+    if (result.success) {
+      msg.textContent = '验证成功！';
+      msg.className = 'msg success';
+      setTimeout(() => this.renderHome(), 500);
+    } else {
+      msg.textContent = result.message;
+      msg.className = 'msg error';
+    }
+  },
+
+  doLogout() {
+    if (confirm('确定要退出登录吗？')) {
+      Auth.logout();
+    }
   },
 
   // ===== 首页 =====
   renderHome() {
     const stats = Storage.getStats()
+    const user = Auth.currentUser
 
     document.getElementById('app').innerHTML = `
+      ${user ? `
+        <div class="user-bar">
+          <div class="user-name">欢迎，<strong>${user.name || user.user_name || '用户'}</strong>
+            <span style="font-size:12px;color:#a0aec0;margin-left:4px;">${user.type === 'employee' ? '员工' : '外部'}</span>
+          </div>
+          <button class="btn-logout" onclick="App.doLogout()">退出</button>
+        </div>
+      ` : ''}
+
       <div class="home-header">
         <div class="home-title">FTTH工程英语考核</div>
         <div class="home-subtitle">每日5词 · 50期 · ${stats.totalWords}个专业词汇</div>
@@ -112,11 +190,11 @@ const App = {
       </div>
 
       <div class="tab-bar">
-        <div class="tab-item active" onclick="App.navigate('home')">
+        <div class="tab-item active" onclick="App.renderHome()">
           <div class="tab-icon">&#127968;</div>
           <div class="tab-label">首页</div>
         </div>
-        <div class="tab-item" onclick="App.navigate('wrong')">
+        <div class="tab-item" onclick="App.renderWrong()">
           <div class="tab-icon">&#128221;</div>
           <div class="tab-label">错题本</div>
         </div>
@@ -139,7 +217,7 @@ const App = {
         correctCount: 0,
         wrongWords: []
       }
-      this.navigate('quiz')
+      this.renderQuiz()
       return
     }
 
@@ -148,7 +226,6 @@ const App = {
       return
     }
 
-    // random mode
     this.showCountSelector(10, (count) => {
       const questions = QuizEngine.generateRandomQuestions(count)
       this.quizState = {
@@ -157,7 +234,7 @@ const App = {
         correctCount: 0,
         wrongWords: []
       }
-      this.navigate('quiz')
+      this.renderQuiz()
     })
   },
 
@@ -235,13 +312,13 @@ const App = {
         correctCount: 0,
         wrongWords: []
       }
-      this.navigate('quiz')
+      this.renderQuiz()
     })
   },
 
   renderQuiz() {
     if (!this.quizState || this.quizState.questions.length === 0) {
-      this.navigate('home')
+      this.renderHome()
       return
     }
 
@@ -283,7 +360,6 @@ const App = {
     const selected = q.options[index]
     const isCorrect = selected.isCorrect
 
-    // 更新UI
     const items = document.querySelectorAll('.option-item')
     items.forEach((item, i) => {
       item.onclick = null
@@ -302,14 +378,12 @@ const App = {
       }
     })
 
-    // 保存答题记录
     Storage.addQuizRecord({
       word: q.word,
       issue: q.issue,
       isCorrect: isCorrect
     })
 
-    // 记录错题
     if (!isCorrect) {
       Storage.addWrongQuestion({
         word: q.word,
@@ -324,7 +398,6 @@ const App = {
       state.correctCount++
     }
 
-    // 显示记忆提示
     if (q.memory_tip) {
       document.getElementById('tipArea').innerHTML = `
         <div class="tip-card">
@@ -334,7 +407,6 @@ const App = {
       `
     }
 
-    // 显示底部按钮
     const isLast = state.currentIndex === state.questions.length - 1
     document.getElementById('bottomBar').innerHTML = isCorrect ? `
       ${q.example_en ? `
@@ -364,7 +436,7 @@ const App = {
     const state = this.quizState
     state.currentIndex++
     if (state.currentIndex >= state.questions.length) {
-      this.navigate('result')
+      this.renderResult()
     } else {
       this.renderQuiz()
     }
@@ -373,7 +445,7 @@ const App = {
   // ===== 结果页 =====
   renderResult() {
     if (!this.quizState) {
-      this.navigate('home')
+      this.renderHome()
       return
     }
 
@@ -398,6 +470,11 @@ const App = {
     } else {
       scoreClass = 'poor'
       comment = '别灰心！FTTH专业词汇需要反复记忆，多练习一定能进步。'
+    }
+
+    // 提交成绩到后端
+    if (Auth.currentUser) {
+      Auth.submitScore(correct, total, state.questions[0]?.issue || '', null);
     }
 
     document.getElementById('app').innerHTML = `
@@ -436,8 +513,8 @@ const App = {
 
         <div style="margin-top:16px;">
           <button class="btn btn-primary btn-block" onclick="App.startQuiz('random')">再来一轮</button>
-          <button class="btn btn-secondary btn-block" onclick="App.navigate('wrong')">查看错题本</button>
-          <button class="btn btn-secondary btn-block" onclick="App.navigate('home')">返回首页</button>
+          <button class="btn btn-secondary btn-block" onclick="App.renderWrong()">查看错题本</button>
+          <button class="btn btn-secondary btn-block" onclick="App.renderHome()">返回首页</button>
         </div>
 
         <div class="bottom-space"></div>
@@ -500,7 +577,7 @@ const App = {
             <div class="empty-hint">答错的题目会自动添加到这里</div>
           </div>
           <div style="margin-top:20px;">
-            <button class="btn btn-primary" onclick="App.navigate('home')">去答题</button>
+            <button class="btn btn-primary" onclick="App.renderHome()">去答题</button>
           </div>
         `}
 
@@ -508,11 +585,11 @@ const App = {
       </div>
 
       <div class="tab-bar">
-        <div class="tab-item" onclick="App.navigate('home')">
+        <div class="tab-item" onclick="App.renderHome()">
           <div class="tab-icon">&#127968;</div>
           <div class="tab-label">首页</div>
         </div>
-        <div class="tab-item active" onclick="App.navigate('wrong')">
+        <div class="tab-item active" onclick="App.renderWrong()">
           <div class="tab-icon">&#128221;</div>
           <div class="tab-label">错题本</div>
         </div>
@@ -526,9 +603,13 @@ const App = {
       this.renderWrong()
     }
   }
-}
+};
 
 // 启动应用
 document.addEventListener('DOMContentLoaded', () => {
-  App.init()
-})
+  if (!Auth.init()) {
+    App.showLogin();
+  } else {
+    App.renderHome();
+  }
+});

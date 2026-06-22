@@ -6,13 +6,144 @@
   <meta name="theme-color" content="#667eea">
   <title>FTTH工程英语考核</title>
   <link rel="stylesheet" href="css/app.css">
+  <style>
+    /* 登录页样式 */
+    .login-container {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+    .login-header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .login-header p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .login-tabs {
+      display: flex;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #eee;
+    }
+    .login-tabs .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-size: 15px;
+      font-weight: 500;
+      color: #718096;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .login-tabs .tab-btn.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    .login-form .form-group {
+      margin-bottom: 16px;
+    }
+    .login-form .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .login-form .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+    .login-form .form-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .login-form .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .login-form .btn-primary:active {
+      opacity: 0.9;
+    }
+    .msg {
+      margin-top: 12px;
+      font-size: 14px;
+      text-align: center;
+    }
+    .msg.error { color: #e53e3e; }
+    .msg.success { color: #38a169; }
+    .msg.info { color: #3182ce; }
+    
+    /* 用户信息栏 */
+    .user-bar {
+      background: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .user-bar .user-name {
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .user-bar .user-name strong {
+      color: #667eea;
+    }
+    .user-bar .btn-logout {
+      padding: 6px 12px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #718096;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
 
   <script src="data/words.js"></script>
+  <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/quiz.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
